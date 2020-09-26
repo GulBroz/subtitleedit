@@ -13456,8 +13456,7 @@ namespace Nikse.SubtitleEdit.Forms
                 _showEarlierOrLater.Top = Top + 100;
                 _showEarlierOrLater.Left = Left + (Width / 2) - (_showEarlierOrLater.Width / 3);
             }
-
-            _showEarlierOrLater.Initialize(ShowEarlierOrLater, true);
+            _showEarlierOrLater.Initialize(ShowEarlierOrLater, true, DeltaVideo);
             MakeHistoryForUndo(_language.BeforeShowSelectedLinesEarlierLater);
             _showEarlierOrLater.Show(this);
 
@@ -19116,6 +19115,17 @@ namespace Nikse.SubtitleEdit.Forms
             Refresh();
         }
 
+        public TimeCode DeltaVideo()
+        {
+            int index = SubtitleListview1.SelectedItems[0].Index;
+            if (index == -1 || index >= _subtitle.Paragraphs.Count || mediaPlayer.VideoPlayer == null)
+                return null;
+
+            double vtc = mediaPlayer.CurrentPosition;
+            var p = _subtitle.Paragraphs[index];
+            return new TimeCode((mediaPlayer.CurrentPosition - p.StartTime.TotalSeconds) * 1000);
+        }
+
         public void ShowEarlierOrLater(double adjustMilliseconds, SelectionChoice selection)
         {
             var tc = new TimeCode(adjustMilliseconds);
@@ -19292,7 +19302,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
 
             SaveSubtitleListviewIndices();
-            _showEarlierOrLater.Initialize(ShowEarlierOrLater, false);
+            _showEarlierOrLater.Initialize(ShowEarlierOrLater, false, DeltaVideo);
             _showEarlierOrLater.Show(this);
         }
 

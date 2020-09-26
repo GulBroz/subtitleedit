@@ -9,9 +9,11 @@ namespace Nikse.SubtitleEdit.Forms
     public sealed partial class ShowEarlierLater : PositionAndSizeForm
     {
         public delegate void AdjustEventHandler(double adjustMilliseconds, SelectionChoice selection);
+        public delegate TimeCode DeltaVideoEventHandler();
 
         private TimeSpan _totalAdjustment;
         private AdjustEventHandler _adjustCallback;
+        private DeltaVideoEventHandler _deltaCallback;
 
         public ShowEarlierLater()
         {
@@ -61,7 +63,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
         }
 
-        internal void Initialize(AdjustEventHandler adjustCallback, bool onlySelected)
+        internal void Initialize(AdjustEventHandler adjustCallback, bool onlySelected, DeltaVideoEventHandler deltaCallback=null)
         {
             if (onlySelected)
             {
@@ -77,6 +79,7 @@ namespace Nikse.SubtitleEdit.Forms
             }
 
             _adjustCallback = adjustCallback;
+            _deltaCallback = deltaCallback;
             timeUpDownAdjust.TimeCode = new TimeCode(Configuration.Settings.General.DefaultAdjustMilliseconds);
         }
 
@@ -135,5 +138,17 @@ namespace Nikse.SubtitleEdit.Forms
             Configuration.Settings.Tools.LastShowEarlierOrLaterSelection = GetSelectionChoice().ToString();
         }
 
+        private void buttonVideoSync_Click(object sender, EventArgs e)
+        {
+            TimeCode delta = _deltaCallback?.Invoke();
+            if (delta != null)
+            {
+                TimeCode reactiontime = timeUpDownAdjust.TimeCode;
+                _adjustCallback.Invoke(delta.TotalMilliseconds - reactiontime.TotalMilliseconds, GetSelectionChoice());
+                _totalAdjustment = TimeSpan.FromMilliseconds(_totalAdjustment.TotalMilliseconds + delta.TotalMilliseconds - reactiontime.TotalMilliseconds);
+                ShowTotalAdjustMent();
+                Configuration.Settings.General.DefaultAdjustMilliseconds = (int)reactiontime.TotalMilliseconds;
+            }
+        }
     }
 }
